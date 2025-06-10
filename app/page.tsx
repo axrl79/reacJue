@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Canvas } from "@react-three/fiber"
@@ -145,7 +144,10 @@ export default function AlBordeDelAbismo() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [showWarning, setShowWarning] = useState(false)
   const [audioPlaying, setAudioPlaying] = useState(false)
+  const [videoPlaying, setVideoPlaying] = useState(false)
+  const [videoKey, setVideoKey] = useState(0)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 200)
@@ -160,6 +162,34 @@ export default function AlBordeDelAbismo() {
         audioRef.current.play().catch(e => console.log('Audio play failed:', e))
       }
       setAudioPlaying(!audioPlaying)
+    }
+  }
+
+  const toggleVideo = () => {
+    const newState = !videoPlaying
+    setVideoPlaying(newState)
+    setVideoKey(prev => prev + 1)
+    
+    if (newState) {
+      // Pequeño retraso para asegurar que el DOM se actualizó
+      setTimeout(() => {
+        if (videoRef.current) {
+          if (videoRef.current) {
+            videoRef.current.muted = true 
+            videoRef.current.play().catch(e => {
+              console.log('Video play failed:', e)
+              
+              if (videoRef.current) {
+                videoRef.current.muted = true
+                videoRef.current.play()
+              }
+            })
+          }
+        }
+      }, 100)
+    } else if (videoRef.current) {
+      videoRef.current.pause()
+      videoRef.current.currentTime = 0
     }
   }
 
@@ -184,12 +214,20 @@ export default function AlBordeDelAbismo() {
       </audio>
 
       {/* Control de música */}
-      <button
-        onClick={toggleAudio}
-        className="fixed top-4 right-4 z-50 p-3 bg-red-900/20 border border-red-800 rounded-full text-red-400 hover:bg-red-800/30 transition-all"
-      >
-        {audioPlaying ? '🔊' : '🔇'} {audioPlaying ? 'PAUSAR' : 'MÚSICA'}
-      </button>
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
+        <button
+          onClick={toggleAudio}
+          className="p-3 bg-red-900/20 border border-red-800 rounded-full text-red-400 hover:bg-red-800/30 transition-all"
+        >
+          {audioPlaying ? '🔊' : '🔇'} {audioPlaying ? 'PAUSAR' : 'MÚSICA'}
+        </button>
+        <button
+          onClick={toggleVideo}
+          className="p-3 bg-blue-900/20 border border-blue-800 rounded-full text-blue-400 hover:bg-blue-800/30 transition-all"
+        >
+          {videoPlaying ? '📺' : '📹'} {videoPlaying ? 'OCULTAR' : 'TRAILER'}
+        </button>
+      </div>
 
       <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-950 to-black" />
       
@@ -218,6 +256,44 @@ export default function AlBordeDelAbismo() {
             <div className="text-xl text-gray-400 mb-2">El sendero más peligroso de Bolivia</div>
             <div className="text-lg text-red-800">Preparando la aventura extrema...</div>
             <div className="mt-4 text-6xl spinSlow">🚴‍♂️</div>
+          </div>
+        </div>
+      )}
+
+      {/* Sección del trailer de video - Versión mejorada */}
+      {videoPlaying && (
+        <div 
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/90 p-4"
+          onClick={toggleVideo}
+        >
+          <div 
+            className="relative w-full max-w-4xl h-auto vhsEffect"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute inset-0 border-4 border-red-900/50 rounded-lg pointer-events-none vhsBorder"></div>
+            <div className="absolute inset-0 bg-black/20 pointer-events-none vhsNoise"></div>
+            <video
+              key={videoKey}
+              ref={videoRef}
+              src="/assets/trailer.mp4"
+              controls
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-auto rounded-lg vhsGlitch"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="absolute bottom-4 left-4 text-red-500 font-mono text-sm tracking-wider vhsText">
+              ▶ AL BORDE DEL ABISMO - TRAILER OFICIAL
+            </div>
+            <div className="absolute top-4 right-4">
+              <button 
+                onClick={toggleVideo}
+                className="px-3 py-1 bg-red-900/80 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                CERRAR
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -255,6 +331,19 @@ export default function AlBordeDelAbismo() {
           <Canvas camera={{ position: [0, 3, 10], fov: 60 }}>
             <Scene />
           </Canvas>
+        </div>
+
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={toggleVideo}
+            className={`group relative px-6 py-3 bg-blue-900/30 border border-blue-700/50 rounded-lg transition-all duration-500 delay-800 transform hover:bg-blue-800/40 hover:scale-105 ${
+              isLoaded ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0"
+            }`}
+          >
+            <span className="flex items-center gap-2 text-blue-400 font-semibold">
+              ▶ VER TRAILER OFICIAL
+            </span>
+          </button>
         </div>
 
         <p
@@ -366,6 +455,56 @@ export default function AlBordeDelAbismo() {
         
         .spinSlow {
           animation: spinSlow 2s linear infinite;
+        }
+        
+        /* Efectos VHS mejorados */
+        .vhsEffect {
+          box-shadow: 0 0 20px rgba(0, 100, 255, 0.3);
+          transform: perspective(500px) rotateX(2deg);
+        }
+        
+        .vhsBorder {
+          animation: vhsBorder 0.5s infinite alternate;
+          border-image: linear-gradient(45deg, rgba(255,0,0,0.3), rgba(0,100,255,0.3)) 1;
+        }
+        
+        .vhsNoise {
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
+          mix-blend-mode: overlay;
+        }
+        
+        .vhsGlitch {
+          animation: vhsGlitch 5s infinite linear;
+          filter: brightness(1.05) contrast(1.1);
+        }
+        
+        .vhsText {
+          text-shadow: 0 0 5px rgba(255, 0, 0, 0.7);
+          animation: vhsText 2s infinite alternate;
+          background: rgba(0,0,0,0.5);
+          padding: 2px 8px;
+          border-radius: 3px;
+        }
+        
+        @keyframes vhsBorder {
+          0% { border-color: rgba(255, 0, 0, 0.3); }
+          50% { border-color: rgba(0, 100, 255, 0.3); }
+          100% { border-color: rgba(0, 255, 100, 0.2); }
+        }
+        
+        @keyframes vhsGlitch {
+          0% { filter: hue-rotate(0deg) brightness(1.05) contrast(1.1); transform: translateY(0); }
+          20% { filter: hue-rotate(1deg) brightness(1.07) contrast(1.15); transform: translateY(-1px); }
+          40% { filter: hue-rotate(-1deg) brightness(1.03) contrast(1.12); transform: translateY(1px); }
+          60% { filter: hue-rotate(2deg) brightness(1.08) contrast(1.2); transform: translateY(-2px); }
+          80% { filter: hue-rotate(-2deg) brightness(1.05) contrast(1.15); transform: translateY(2px); }
+          100% { filter: hue-rotate(0deg) brightness(1.05) contrast(1.1); transform: translateY(0); }
+        }
+        
+        @keyframes vhsText {
+          0% { transform: translateX(-1px); opacity: 0.9; }
+          50% { transform: translateX(1px); opacity: 1; }
+          100% { transform: translateX(-1px); opacity: 0.9; }
         }
         
         @keyframes sinisterGlow {
